@@ -1,53 +1,32 @@
-import 'dart:async';
+import '../models/todo_item.dart';
+import '../../infra/firebase/firestore_repository.dart';
 
-import 'package:crud_firebase/shared/data/models/todo_item.dart';
-import 'package:crud_firebase/shared/data/todo_data_source_interface.dart';
+import '../interfaces/todo_data_source_interface.dart';
 
-class ToDoLocalDataSource implements ToDoDataSourceInterface {
-  ToDoLocalDataSource() {
-    streamController.stream.listen((itemList) {
-      _actualItemList = itemList;
-    });
+class TodoRemoteDataSource implements ToDoDataSourceInterface {
+  final FirestoreRepository repository;
+
+  TodoRemoteDataSource({required this.repository});
+
+  @override
+  Stream<List<ToDoItem>?> fetchToDoListStream() {
+    return repository.read().asyncMap((event) => event.map((Map<String, dynamic> map) => ToDoItem.fromMap(map: map)).toList());
   }
 
-  final streamController = StreamController<List<ToDoItem>?>.broadcast();
-
-  List<ToDoItem>? _actualItemList;
-
   @override
-  Stream<List<ToDoItem>?> fetchToDoListStream() => streamController.stream;
-
-  @override
-  Future<void> onAddToDoItem(ToDoItem item) async {
-    final itemList = _actualItemList ?? <ToDoItem>[];
-    final newList = [...itemList, item];
-
-    streamController.sink.add(newList);
+  Future<void> onAddToDoItem(ToDoItem item) {
+    return repository.add(data: item.toMap());
   }
 
   @override
   Future<void> onRemoveToDoItem(String uid) async {
-    final itemList = _actualItemList ?? <ToDoItem>[];
-
-    final removableItem = itemList.singleWhere((item) => item.id == uid);
-
-    final newList =
-        itemList.where((item) => item.id != removableItem.id).toList();
-
-    streamController.sink.add(newList);
+    final String id = (await repository.getId(key: 'id', value: uid));
+    await repository.remove(id: id);
   }
 
   @override
   Future<void> onToogleToDoItemState(String uid, bool state) async {
-    final itemList = _actualItemList ?? <ToDoItem>[];
-
-    final alterableItem = itemList.singleWhere((item) => item.id == uid);
-
-    final newList = [
-      ...itemList.where((item) => item.id != alterableItem.id).toList(),
-      ToDoItem(id: alterableItem.id, title: alterableItem.title, state: state),
-    ];
-
-    streamController.sink.add(newList);
+    final String id = (await repository.getId(key: 'id', value: uid));
+    await repository.update(id: id, data: {'state': state});
   }
 }

@@ -1,4 +1,4 @@
-import 'models/todo_item.dart';
+import '../models/todo_item.dart';
 
 abstract class ToDoDataSourceInterface {
   Future<void> onAddToDoItem(ToDoItem item);

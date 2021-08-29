@@ -153,9 +153,7 @@ class ToDoItemListView extends StatelessWidget {
             controlAffinity: ListTileControlAffinity.leading,
             title: Text(
               item.title,
-              style: item.state == true
-                  ? AppTextStyles.doneItemTextStyle
-                  : AppTextStyles.undoneItemTextStyle,
+              style: item.state == true ? AppTextStyles.doneItemTextStyle : AppTextStyles.undoneItemTextStyle,
             ),
             secondary: SizedBox(
               width: 80,
